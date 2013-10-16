@@ -44,7 +44,7 @@ class ExampleInternalsPlugin : public InternalsPluginV01
   void EndSession();             // session has ended
 
   // GAME OUTPUT
-  long WantsTelemetryUpdates() { return( 1 ); } // CHANGE TO 1 TO ENABLE TELEMETRY EXAMPLE!
+  long WantsTelemetryUpdates() { return( false ); } // CHANGE TO 1 TO ENABLE TELEMETRY EXAMPLE!
   void UpdateTelemetry( const TelemInfoV01 &info );
 
   bool WantsGraphicsUpdates() { return( false ); } // CHANGE TO TRUE TO ENABLE GRAPHICS EXAMPLE!
@@ -64,7 +64,7 @@ class ExampleInternalsPlugin : public InternalsPluginV01
   bool ForceFeedback( float &forceValue );  // SEE FUNCTION BODY TO ENABLE FORCE EXAMPLE
 
   // SCORING OUTPUT
-  bool WantsScoringUpdates() { return( false ); } // CHANGE TO TRUE TO ENABLE SCORING EXAMPLE!
+  bool WantsScoringUpdates() { return( true ); } // CHANGE TO TRUE TO ENABLE SCORING EXAMPLE!
   void UpdateScoring( const ScoringInfoV01 &info );
 
   // COMMENTARY INPUT

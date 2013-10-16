@@ -108,7 +108,7 @@ void saveLog(const char* cpTemp)
 
 void ExampleInternalsPlugin::Startup( long version )
 {
-  saveDelay=GetPrivateProfileInt("config", "save_delay",10*1000,".\\rf_guage_config.ini");
+    saveDelay=GetPrivateProfileInt("config", "save_delay",10*1000,".\\rf_guage_config.ini");
     GetPrivateProfileString("config", "url","http://sina.com.cn",url,2048,".\\rf_guage_config.ini");
     GetPrivateProfileString("config", "log_dir","hotlap_data",logFilePath,512,".\\rf_guage_config.ini");
     lastSaveTime=GetTickCount();
