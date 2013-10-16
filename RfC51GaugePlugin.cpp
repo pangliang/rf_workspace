@@ -1,8 +1,37 @@
 #include "RfC51GaugePlugin.hpp"          // corresponding header file
 #include <math.h>               // for atan2, sqrt
 #include <stdio.h>              // for sample output
+#include <WinSock2.h>
 #include <windows.h>
-#include "ser.hpp"
+
+
+
+struct OutGaugePack
+{
+	unsigned	Time;			// time in milliseconds (to check order)
+
+	char		Car[4];			// Car name
+	unsigned short		Flags;			// Info (see OG_x below)
+	char		Gear;			// Reverse:0, Neutral:1, First:2...
+	char		PLID;			// Unique ID of viewed player (0 = none)
+	float		Speed;			// M/S
+	float		RPM;			// RPM
+	float		Turbo;			// BAR
+	float		EngTemp;		// C
+	float		Fuel;			// 0 to 1
+	float		OilPressure;	// BAR
+	float		OilTemp;		// C
+	unsigned	DashLights;		// Dash lights available (see DL_x below)
+	unsigned	ShowLights;		// Dash lights currently switched on
+	float		Throttle;		// 0 to 1
+	float		Brake;			// 0 to 1
+	float		Clutch;			// 0 to 1
+	char		Display1[16];	// Usually Fuel
+	char		Display2[16];	// Usually Settings
+
+	int			ID;				// optional - only if OutGauge ID is specified
+} pack;
+
 
 
 // plugin information
@@ -14,34 +43,48 @@ InternalsPluginInfo g_PluginInfo;
 
 
 //################  for guage ###############
-DWORD lastSendTime=0;
-unsigned sendDelay=30;
+DWORD lastSaveTime=0;
+DWORD delay=100;
+char* ip=new char[20];
+char* car=new char[4];
+unsigned port=4444;
 
-cnComm com;
+unsigned unit=0;
 
+SOCKET socketc;
+sockaddr_in addr;
 //################  for guage end ###############
 
 // interface to plugin information
 extern "C" __declspec(dllexport)
-const char* __cdecl GetPluginName() { return g_szPluginName; }
+const char* __cdecl GetPluginName()
+{
+    return g_szPluginName;
+}
 
 extern "C" __declspec(dllexport)
-unsigned __cdecl GetPluginVersion() { return g_uPluginVersion; }
+unsigned __cdecl GetPluginVersion()
+{
+    return g_uPluginVersion;
+}
 
 extern "C" __declspec(dllexport)
-unsigned __cdecl GetPluginObjectCount() { return g_uPluginObjectCount; }
+unsigned __cdecl GetPluginObjectCount()
+{
+    return g_uPluginObjectCount;
+}
 
 // get the plugin-info object used to create the plugin.
 extern "C" __declspec(dllexport)
 PluginObjectInfo* __cdecl GetPluginObjectInfo( const unsigned uIndex )
 {
-  switch(uIndex)
-  {
+    switch(uIndex)
+    {
     case 0:
-      return  &g_PluginInfo;
+        return  &g_PluginInfo;
     default:
-      return 0;
-  }
+        return 0;
+    }
 }
 
 
@@ -49,17 +92,38 @@ PluginObjectInfo* __cdecl GetPluginObjectInfo( const unsigned uIndex )
 
 InternalsPluginInfo::InternalsPluginInfo()
 {
-  // put together a name for this plugin
-  sprintf( m_szFullName, "%s - %s", g_szPluginName, InternalsPluginInfo::GetName() );
+    // put together a name for this plugin
+    sprintf( m_szFullName, "%s - %s", g_szPluginName, InternalsPluginInfo::GetName() );
 }
 
-const char*    InternalsPluginInfo::GetName()     const { return RfC51GaugePlugin::GetName(); }
-const char*    InternalsPluginInfo::GetFullName() const { return m_szFullName; }
-const char*    InternalsPluginInfo::GetDesc()     const { return "Example Internals Plugin"; }
-const unsigned InternalsPluginInfo::GetType()     const { return RfC51GaugePlugin::GetType(); }
-const char*    InternalsPluginInfo::GetSubType()  const { return RfC51GaugePlugin::GetSubType(); }
-const unsigned InternalsPluginInfo::GetVersion()  const { return RfC51GaugePlugin::GetVersion(); }
-void*          InternalsPluginInfo::Create()      const { return new RfC51GaugePlugin(); }
+const char*    InternalsPluginInfo::GetName()     const
+{
+    return RfC51GaugePlugin::GetName();
+}
+const char*    InternalsPluginInfo::GetFullName() const
+{
+    return m_szFullName;
+}
+const char*    InternalsPluginInfo::GetDesc()     const
+{
+    return "Example Internals Plugin";
+}
+const unsigned InternalsPluginInfo::GetType()     const
+{
+    return RfC51GaugePlugin::GetType();
+}
+const char*    InternalsPluginInfo::GetSubType()  const
+{
+    return RfC51GaugePlugin::GetSubType();
+}
+const unsigned InternalsPluginInfo::GetVersion()  const
+{
+    return RfC51GaugePlugin::GetVersion();
+}
+void*          InternalsPluginInfo::Create()      const
+{
+    return new RfC51GaugePlugin();
+}
 
 
 // InternalsPlugin class
@@ -69,142 +133,116 @@ const char RfC51GaugePlugin::m_szSubType[] = "Internals";
 const unsigned RfC51GaugePlugin::m_uID = 1;
 const unsigned RfC51GaugePlugin::m_uVersion = 3;  // set to 3 for InternalsPluginV3 functionality and added graphical and vehicle info
 
-
 PluginObjectInfo *RfC51GaugePlugin::GetInfo()
 {
-  return &g_PluginInfo;
+    return &g_PluginInfo;
 }
 
 
-
-void RfC51GaugePlugin::UpdateTelemetry( const TelemInfoV2 &info )
+void RfC51GaugePlugin::UpdateTelemetry(const TelemInfoV2 &info)
 {
-	DWORD now=GetTickCount();
+    DWORD now=GetTickCount();
 
-	if(lastSendTime+sendDelay<now)
-	{
+    if(now-lastSaveTime>delay )
+    {
 
+        const unsigned int cusBufferSize = 50*1024;
+        char cpTemp[cusBufferSize]={'\0'};
 
-	  const unsigned short cusBufferSize = 1024;
-	  char* cpTemp = new char[cusBufferSize];
+        //pack.Time=now;
 
-	  // Use the incoming data, for now I'll just write some of it to a file to a) make sure it
-	  // is working, and b) explain the coordinate system a little bit (see header for more info)
+        //pack.Flags=0;
+        pack.Gear=info.mGear+1;
+        //pack.PLID=0;
 
-	  const float metersPerSec = sqrtf( ( info.mLocalVel.x * info.mLocalVel.x ) +
+        const float metersPerSec = sqrtf( ( info.mLocalVel.x * info.mLocalVel.x ) +
                             ( info.mLocalVel.y * info.mLocalVel.y ) +
                             ( info.mLocalVel.z * info.mLocalVel.z ) );
-      char action='S';
-      DWORD value=metersPerSec * 3.6f+0.5;
-      com.Write(&action,1);
-      com.Write(&value,4);
+        if(unit==0)
+            pack.Speed=metersPerSec * 1.609344;
+        else
+            pack.Speed=metersPerSec;
+        pack.RPM=info.mEngineRPM;
+        pack.Fuel=0;
+        pack.Clutch=info.mUnfilteredClutch;
+        pack.Brake=info.mUnfilteredBrake;
+        pack.Throttle=info.mUnfilteredThrottle;
+        pack.EngTemp=info.mEngineWaterTemp;
+        pack.OilTemp=info.mEngineOilTemp;
 
-      action='G';
-      value=info.mGear+1;  //rf r=-1 ,lfs r=0;
-      com.Write(&action,1);
-      com.Write(&value,4);
+        pack.Turbo=10;
+        pack.OilPressure=1;
 
 
-      const float hiddenRpm=info.mEngineMaxRPM*0.4;
-      if(info.mEngineRPM>hiddenRpm)
-      {
-          action='R';
-          value=15*((info.mEngineRPM-hiddenRpm)/(info.mEngineMaxRPM-hiddenRpm));
-          com.Write(&action,1);
-          com.Write(&value,4);
-      }else{
-          action='R';
-          value=0;
-          com.Write(&action,1);
-        com.Write(&value,4);
-      }
-      if(info.mEngineRPM>info.mEngineMaxRPM)
-      {
-          action='C';
-          value=1;
-          com.Write(&action,1);
-          com.Write(&value,4);
-      }else{
-          action='C';
-          value=0;
-          com.Write(&action,1);
-          com.Write(&value,4);
-      }
+        sendto(socketc,(char*)&pack,sizeof(OutGaugePack),0,(sockaddr*)&addr,sizeof(addr));
 
-      sprintf( cpTemp, "[%u]:Speed=%.1fKPH, Gear=%d, Rpm=%.1f ,MaxRPM=%.1f\n", lastSendTime/1000,metersPerSec * 3.6f,info.mGear,info.mEngineRPM,info.mEngineMaxRPM);
-      mpConsole->Write(cpTemp);
+        lastSaveTime=GetTickCount();
 
-	  if(cpTemp)delete [] cpTemp;
-
-      lastSendTime=GetTickCount();
-	}
-
+    }
 }
+
 
 
 void RfC51GaugePlugin::Startup()
 {
-  // Open ports, read configs, whatever you need to do.  For now, I'll just clear out the
-  // example output data files.
-  const unsigned short cusBufferSize = 1024;
-  char* cpTemp = new char[cusBufferSize];
-  mpConsole->Write("-STARTUP-\n" );
+    // Open ports, read configs, whatever you need to do.  For now, I'll just clear out the
+    // example output data files.
 
-  DWORD ser_port=GetPrivateProfileInt("config", "port",6,".\\rf_guage_config.ini");
-  DWORD dwBaudRate=GetPrivateProfileInt("config", "baudrate",9600,".\\rf_guage_config.ini");
-  sendDelay=GetPrivateProfileInt("config","delay",10,".\\rf_guage_config.ini");
+    delay=GetPrivateProfileInt("config", "Delay",1000,".\\outgauge_config.ini");
+    GetPrivateProfileString("config", "IP","127.0.0.1",ip,2048,".\\outgauge_config.ini");
+    GetPrivateProfileString("config", "Car","FZ5",car,4,".\\outgauge_config.ini");
+    port=GetPrivateProfileInt("config", "Port",4444,".\\outgauge_config.ini");
+    unit=GetPrivateProfileInt("config", "Unit",0,".\\outgauge_config.ini");
+    lastSaveTime=GetTickCount();
 
-  sprintf( cpTemp, "使用串口：%d, 波特率：%d，发送间隔：%d\n", ser_port,dwBaudRate,sendDelay);
-  mpConsole->Write(cpTemp);
+    strcpy (pack.Car,car);
 
-  com.Open(ser_port,dwBaudRate); //打开串口1并使用默认设置
-  if(!com.IsOpen())
-  {
-    sprintf( cpTemp, "串口 %d 不可用，请检查后重新运行游戏！\n", ser_port);
-    mpConsole->Write(cpTemp);
-  }
-   com.SetBufferSize(1024,1024);
+    WSADATA wsaData;
+    int Ret = WSAStartup(MAKEWORD(2,2),&wsaData);
+    printf("Client..!\n");
+    if(Ret != 0)
+    {
+        printf("无法初始化winsock.\n");
+        WSACleanup();
+    }
+    else{
 
-   if(cpTemp)delete [] cpTemp;
+    //    printf("初始化winsock成功\n");
+    }
 
+    socketc=::socket(AF_INET,SOCK_DGRAM,IPPROTO_IP);
+    addr.sin_addr.S_un.S_addr=inet_addr(ip);
+    addr.sin_family=AF_INET;
+    addr.sin_port=ntohs(port);
 }
 
 
 void RfC51GaugePlugin::Shutdown()
 {
-  mpConsole->Write("-SHUTDOWN-\n" );
-  // Close file
-  if( com.IsOpen())
-  {
-		com.Close();
-		mpConsole->Write("关闭串口 !!\n" );
-  }
-  delete com;
-  Sleep(1000);
 
 }
 
 
 void RfC51GaugePlugin::StartSession()
 {
-   mpConsole->Write("--STARTSESSION--\n" );
+
 }
 
 
 void RfC51GaugePlugin::EndSession()
 {
-  mpConsole->Write("--ENDSESSION--\n" );
+
 }
 
 
 void RfC51GaugePlugin::EnterRealtime()
 {
-  mpConsole->Write( "---ENTERREALTIME---\n" );
+
 }
 
 
 void RfC51GaugePlugin::ExitRealtime()
 {
-  mpConsole->Write( "---EXITREALTIME---\n" );
+
 }
 
