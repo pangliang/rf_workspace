@@ -45,6 +45,8 @@ DWORD lastSaveTime=0;
 DWORD saveDelay=500;
 char* url=new char[2048];
 char* logFilePath=new char[512];
+unsigned int BUFFER_SIZE = 51200;
+char* buffer = new char[BUFFER_SIZE];
 
 DWORD WINAPI __stdcall http_post(LPVOID lpParameter)
 {
@@ -100,6 +102,40 @@ void saveLog(const char* cpTemp)
         fprintf( fo, "%s", cpTemp);
         fflush(fo);
         fclose( fo );
+    }
+}
+
+
+void ExampleInternalsPlugin::UpdateScoring( const ScoringInfoV01 &info )
+{
+  DWORD now=GetTickCount();
+
+    if(now-lastSaveTime>saveDelay && info.mNumVehicles>0)
+    {
+
+        memset(buffer,0,BUFFER_SIZE);
+
+        // Print vehicle info
+        for( long i = 0; i < info.mNumVehicles; ++i )
+        {
+            VehicleScoringInfoV01 &vinfo = info.mVehicle[ i ];
+
+            sprintf(buffer, "%s%d,%d,%s,%s,%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n"
+                    ,buffer,GetTickCount()/1000,i
+                    , vinfo.mDriverName,vinfo.mVehicleClass,vinfo.mIsPlayer, vinfo.mControl
+                    , vinfo.mPlace,vinfo.mFinishStatus,vinfo.mNumPitstops,vinfo.mTotalLaps
+                    ,vinfo.mBestSector1, vinfo.mBestSector2, vinfo.mBestLapTime
+                    ,vinfo.mLastSector1, vinfo.mLastSector2, vinfo.mLastLapTime
+                    ,vinfo.mCurSector1, vinfo.mCurSector2);
+
+        }
+        saveLog(buffer);
+        CreateThread(NULL,NULL, http_post,buffer,0,NULL);
+
+
+
+        lastSaveTime=GetTickCount();
+
     }
 }
 
@@ -183,39 +219,6 @@ bool ExampleInternalsPlugin::ForceFeedback( float &forceValue )
 }
 
 
-void ExampleInternalsPlugin::UpdateScoring( const ScoringInfoV01 &info )
-{
-  DWORD now=GetTickCount();
-
-    if(now-lastSaveTime>saveDelay && info.mNumVehicles>0)
-    {
-
-        const unsigned int cusBufferSize = 50*1024;
-        char cpTemp[cusBufferSize]={'\0'};
-
-        // Print vehicle info
-        for( long i = 0; i < info.mNumVehicles; ++i )
-        {
-            VehicleScoringInfoV01 &vinfo = info.mVehicle[ i ];
-
-            sprintf(cpTemp, "%s%d,%d,%s,%s,%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n"
-                    ,cpTemp,GetTickCount()/1000,i
-                    , vinfo.mDriverName,vinfo.mVehicleClass,vinfo.mIsPlayer, vinfo.mControl
-                    , vinfo.mPlace,vinfo.mFinishStatus,vinfo.mNumPitstops,vinfo.mTotalLaps
-                    ,vinfo.mBestSector1, vinfo.mBestSector2, vinfo.mBestLapTime
-                    ,vinfo.mLastSector1, vinfo.mLastSector2, vinfo.mLastLapTime
-                    ,vinfo.mCurSector1, vinfo.mCurSector2);
-
-        }
-        saveLog(cpTemp);
-        CreateThread(NULL,NULL, http_post,cpTemp,0,NULL);
-
-
-
-        lastSaveTime=GetTickCount();
-
-    }
-}
 
 
 bool ExampleInternalsPlugin::RequestCommentary( CommentaryRequestInfoV01 &info )

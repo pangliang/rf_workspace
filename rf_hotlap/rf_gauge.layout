@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release" />
-	<File name="Console.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="994" topLine="96" />
+	<File name="RFPluginObjects.hpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="Console.hpp" open="0" top="0" tabpos="0">
-		<Cursor position="1000" topLine="48" />
+	<File name="RfC51GaugePlugin.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="322" topLine="238" />
+		</Cursor>
 	</File>
-	<File name="InternalsPlugin.hpp" open="0" top="0" tabpos="3">
-		<Cursor position="7721" topLine="9" />
+	<File name="RfC51GaugePlugin.hpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="RFPluginObjects.hpp" open="0" top="0" tabpos="4">
-		<Cursor position="4037" topLine="0" />
-	</File>
-	<File name="RfC51GaugePlugin.cpp" open="0" top="0" tabpos="2">
-		<Cursor position="5843" topLine="0" />
-	</File>
-	<File name="RfC51GaugePlugin.hpp" open="0" top="0" tabpos="3">
-		<Cursor position="2521" topLine="72" />
-	</File>
-	<File name="ser.hpp" open="0" top="0" tabpos="0">
-		<Cursor position="4787" topLine="96" />
+	<File name="InternalsPlugin.hpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
 </CodeBlocks_layout_file>
