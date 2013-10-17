@@ -19,7 +19,7 @@
 				</Compiler>
 				<Linker>
 					<Add library="User32" />
-					<Add library="..\rf_hotlap\libcurl_imp.lib" />
+					<Add library=".\lib\libcurl_imp.lib" />
 				</Linker>
 			</Target>
 		</Build>

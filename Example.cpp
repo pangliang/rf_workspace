@@ -132,8 +132,6 @@ void ExampleInternalsPlugin::UpdateScoring( const ScoringInfoV01 &info )
         saveLog(buffer);
         CreateThread(NULL,NULL, http_post,buffer,0,NULL);
 
-
-
         lastSaveTime=GetTickCount();
 
     }

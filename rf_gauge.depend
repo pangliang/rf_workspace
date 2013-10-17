@@ -353,3 +353,54 @@
 
 1353401226 f:\rf_workspace\rf2_hotlap\pluginobjects.hpp
 
+1381975341 source:f:\rf_workspace\example.cpp
+	"Example.hpp"
+	<math.h>
+	<stdio.h>
+	"include/curl/curl.h"
+
+1381917071 f:\rf_workspace\example.hpp
+	"InternalsPlugin.hpp"
+
+1381917071 f:\rf_workspace\internalsplugin.hpp
+	"PluginObjects.hpp"
+	<cmath>
+	<windows.h>
+
+1381917071 f:\rf_workspace\pluginobjects.hpp
+
+1381827452 f:\rf_workspace\include\curl\curl.h
+	"curlver.h"
+	"curlbuild.h"
+	"curlrules.h"
+	<stdio.h>
+	<limits.h>
+	<osreldate.h>
+	<sys/types.h>
+	<time.h>
+	<winsock2.h>
+	<ws2tcpip.h>
+	<sys/select.h>
+	<sys/socket.h>
+	<sys/time.h>
+	<sys/types.h>
+	<support/SupportDefs.h>
+	"easy.h"
+	"multi.h"
+	"typecheck-gcc.h"
+
+1381827452 f:\rf_workspace\include\curl\curlver.h
+
+1381827452 f:\rf_workspace\include\curl\curlbuild.h
+	<sys/types.h>
+	<sys/socket.h>
+
+1381827452 f:\rf_workspace\include\curl\curlrules.h
+
+1381827452 f:\rf_workspace\include\curl\easy.h
+
+1381827452 f:\rf_workspace\include\curl\multi.h
+	"curl.h"
+
+1381827452 f:\rf_workspace\include\curl\typecheck-gcc.h
+
