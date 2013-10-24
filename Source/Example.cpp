@@ -9,18 +9,18 @@
 //?associated with it, are part of CUBE technology (tm).                   ?
 //?                PROPRIETARY AND CONFIDENTIAL                            ?
 //?Copyright (c) 1996-2008 Image Space Incorporated.  All rights reserved. ?
-//?                                                                        ?
+//?                                                                         ?
 //?                                                                        ?
 //?Change history:                                                         ?
 //?  tag.2005.11.30: created                                               ?
 //?                                                                        ?
 //ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß?
-#pragma comment£¨ lib, "libcurl.dll" £©
 
 #include "Example.hpp"          // corresponding header file
 #include <math.h>               // for atan2, sqrt
 #include <stdio.h>              // for sample output
-#include "include/curl/curl.h"
+#include <direct.h>
+#include "curl/curl.h"
 
 // plugin information
 
@@ -146,6 +146,8 @@ void ExampleInternalsPlugin::Startup( long version )
     GetPrivateProfileString("config", "url","http://sina.com.cn",url,2048,".\\rf_guage_config.ini");
     GetPrivateProfileString("config", "log_dir","hotlap_data",logFilePath,512,".\\rf_guage_config.ini");
     lastSaveTime=GetTickCount();
+
+	mkdir(logFilePath);
 
     time_t t = time( 0 );
     char tmp[1024];
